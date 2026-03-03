@@ -85,7 +85,7 @@ python -m src.main
 |--------|------|------|
 | `QQ_BOT_APPID` | ✅ | QQ 机器人的 AppID，从 QQ 开放平台获取 |
 | `QQ_BOT_TOKEN` | ✅ | QQ 机器人的 Token，从 QQ 开放平台获取 |
-| `BSM_API_URL` | ✅ | BSM API 服务地址，默认为 `http://47.108.93.18:11325` |
+| `BSM_API_URL` | ✅ | BSM API 服务地址，默认为 `http://localhost:11325` |
 | `BSM_USERNAME` | ✅ | BSM 登录用户名 |
 | `BSM_PASSWORD` | ✅ | BSM 登录密码 |
 | `BOT_PREFIX` | ❌ | 机器人指令前缀，默认为 `/mc` |

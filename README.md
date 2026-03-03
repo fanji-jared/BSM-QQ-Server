@@ -2,6 +2,10 @@
 
 🤖 一个用于管理 Minecraft 基岩版服务器的 QQ 机器人，通过对接 Bedrock Server Manager (BSM) API 实现远程服务器管理。
 
+> 💡 本项目基于 [bsm-api-client](https://github.com/DMedina559/bsm-api-client) 构建，这是 BSM 官方提供的 Python 异步 API 客户端库。
+
+[English](README_EN.md) | 中文
+
 ## ✨ 功能特性
 
 - 🔧 **服务器管理**: 启动、停止、重启、更新服务器

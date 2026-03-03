@@ -1,6 +1,9 @@
 # Document folder
 document/
 
+# Reference project
+bsm-reference/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

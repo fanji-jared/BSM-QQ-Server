@@ -1,214 +1,230 @@
+"""BSM API 客户端包装器，基于官方 bsm-api-client"""
+
 import logging
 from typing import Any, Dict, List, Optional
 
-import httpx
+from bsm_api_client import BedrockServerManagerApi
+from bsm_api_client.exceptions import (
+    APIError,
+    AuthError,
+    CannotConnectError,
+    ServerNotFoundError,
+    ServerNotRunningError,
+)
+from bsm_api_client.models import (
+    ActionResponse,
+    AllowlistAddPayload,
+    AllowlistRemovePayload,
+    BackupActionPayload,
+    CommandPayload,
+    FileNamePayload,
+    GeneralApiResponse,
+    PermissionsSetPayload,
+    PlayerPermission,
+    PropertiesPayload,
+)
 
 from ..config import config
-from .exceptions import (
-    BSMAuthenticationError,
-    BSMConnectionError,
-    BSMError,
-    BSMNotFoundError,
-    BSMServerError,
-)
-from .models import AuthToken, ServerInfo, ServerStatus, TaskResult
 
 logger = logging.getLogger(__name__)
 
 
 class BSMClient:
+    """BSM API 客户端包装器"""
+    
     def __init__(
         self,
         base_url: Optional[str] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
     ):
-        self.base_url = (base_url or config.BSM_API_URL).rstrip("/")
+        self.base_url = base_url or config.BSM_API_URL
         self.username = username or config.BSM_USERNAME
         self.password = password or config.BSM_PASSWORD
-        self._token: Optional[str] = None
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: Optional[BedrockServerManagerApi] = None
 
     async def __aenter__(self) -> "BSMClient":
-        await self._get_client()
+        self._client = BedrockServerManagerApi(
+            base_url=self.base_url,
+            username=self.username,
+            password=self.password,
+        )
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close()
-
-    async def _get_client(self) -> httpx.AsyncClient:
-        if self._client is None:
-            self._client = httpx.AsyncClient(timeout=30.0)
-        return self._client
-
-    async def close(self):
         if self._client:
-            await self._client.aclose()
+            await self._client.close()
             self._client = None
 
-    def _get_headers(self) -> Dict[str, str]:
-        headers = {"Content-Type": "application/json"}
-        if self._token:
-            headers["Authorization"] = f"Bearer {self._token}"
-        return headers
+    @property
+    def api(self) -> BedrockServerManagerApi:
+        if not self._client:
+            raise RuntimeError("Client not initialized. Use async context manager.")
+        return self._client
 
-    async def _request(
-        self,
-        method: str,
-        endpoint: str,
-        **kwargs,
-    ) -> Dict[str, Any]:
-        client = await self._get_client()
-        url = f"{self.base_url}{endpoint}"
-        headers = self._get_headers()
-        if "headers" in kwargs:
-            headers.update(kwargs.pop("headers"))
+    # ========== 管理器信息 ==========
+    
+    async def get_info(self) -> GeneralApiResponse:
+        """获取系统信息"""
+        return await self.api.async_get_info()
 
-        try:
-            response = await client.request(method, url, headers=headers, **kwargs)
-            
-            if response.status_code == 401:
-                raise BSMAuthenticationError("Authentication failed or token expired")
-            elif response.status_code == 404:
-                raise BSMNotFoundError(f"Resource not found: {endpoint}")
-            elif response.status_code >= 500:
-                raise BSMServerError(f"Server error: {response.status_code}")
-            
-            response.raise_for_status()
-            
-            if response.content:
-                return response.json()
-            return {}
-            
-        except httpx.ConnectError as e:
-            raise BSMConnectionError(f"Failed to connect to BSM API: {e}")
-        except httpx.TimeoutException as e:
-            raise BSMConnectionError(f"Request timeout: {e}")
-        except httpx.HTTPStatusError as e:
-            raise BSMError(f"HTTP error: {e}")
+    # ========== 服务器列表和状态 ==========
+    
+    async def list_servers(self) -> List[dict]:
+        """获取所有服务器列表"""
+        result = await self.api.async_get_servers()
+        return result.servers or []
 
-    async def authenticate(self) -> AuthToken:
-        data = {
-            "username": self.username,
-            "password": self.password,
+    async def get_server_names(self) -> List[str]:
+        """获取服务器名称列表"""
+        return await self.api.async_get_server_names()
+
+    async def get_server_status(self, server_name: str) -> dict:
+        """获取服务器运行状态"""
+        result = await self.api.async_get_server_running_status(server_name)
+        return {
+            "name": server_name,
+            "running": result.data.get("running", False) if result.data else False,
         }
-        result = await self._request("POST", "/auth/token", json=data)
-        token = AuthToken(**result)
-        self._token = token.access_token
-        logger.info("Successfully authenticated with BSM API")
-        return token
 
-    async def refresh_token(self) -> AuthToken:
-        result = await self._request("GET", "/auth/refresh-token")
-        token = AuthToken(**result)
-        self._token = token.access_token
-        return token
+    async def get_server_process_info(self, server_name: str) -> dict:
+        """获取服务器进程信息"""
+        result = await self.api.async_get_server_process_info(server_name)
+        return result.data.get("process_info", {}) if result.data else {}
 
-    async def logout(self):
-        await self._request("GET", "/auth/logout")
-        self._token = None
-        logger.info("Logged out from BSM API")
+    async def get_server_version(self, server_name: str) -> str:
+        """获取服务器版本"""
+        result = await self.api.async_get_server_version(server_name)
+        return result.data.get("version", "unknown") if result.data else "unknown"
 
-    async def ensure_authenticated(self):
-        if not self._token:
-            await self.authenticate()
+    # ========== 服务器操作 ==========
+    
+    async def start_server(self, server_name: str) -> ActionResponse:
+        """启动服务器"""
+        return await self.api.async_start_server(server_name)
 
-    async def start_server(self, server_name: str) -> TaskResult:
-        await self.ensure_authenticated()
-        result = await self._request("POST", f"/api/server/{server_name}/start")
-        return TaskResult(**result)
+    async def stop_server(self, server_name: str) -> ActionResponse:
+        """停止服务器"""
+        return await self.api.async_stop_server(server_name)
 
-    async def stop_server(self, server_name: str) -> TaskResult:
-        await self.ensure_authenticated()
-        result = await self._request("POST", f"/api/server/{server_name}/stop")
-        return TaskResult(**result)
+    async def restart_server(self, server_name: str) -> ActionResponse:
+        """重启服务器"""
+        return await self.api.async_restart_server(server_name)
 
-    async def restart_server(self, server_name: str) -> TaskResult:
-        await self.ensure_authenticated()
-        result = await self._request("POST", f"/api/server/{server_name}/restart")
-        return TaskResult(**result)
-
-    async def get_server_status(self, server_name: str) -> ServerInfo:
-        await self.ensure_authenticated()
-        result = await self._request("GET", f"/api/server/{server_name}/status")
-        return ServerInfo(name=server_name, **result)
-
-    async def list_servers(self) -> List[ServerInfo]:
-        await self.ensure_authenticated()
-        result = await self._request("GET", "/api/servers")
-        servers = []
-        for name, info in result.items():
-            servers.append(ServerInfo(name=name, **info))
-        return servers
-
-    async def send_command(self, server_name: str, command: str) -> TaskResult:
-        await self.ensure_authenticated()
-        result = await self._request(
-            "POST",
-            f"/api/server/{server_name}/send_command",
-            json={"command": command},
+    async def send_command(self, server_name: str, command: str) -> ActionResponse:
+        """发送服务器命令"""
+        return await self.api.async_send_server_command(
+            server_name, CommandPayload(command=command)
         )
-        return TaskResult(**result)
 
-    async def get_properties(self, server_name: str) -> Dict[str, Any]:
-        await self.ensure_authenticated()
-        return await self._request("GET", f"/api/server/{server_name}/properties/get")
+    async def update_server(self, server_name: str) -> ActionResponse:
+        """更新服务器"""
+        return await self.api.async_update_server(server_name)
 
-    async def set_property(
-        self, server_name: str, property_name: str, value: Any
-    ) -> TaskResult:
-        await self.ensure_authenticated()
-        result = await self._request(
-            "POST",
-            f"/api/server/{server_name}/properties/set",
-            json={"property": property_name, "value": value},
+    # ========== 配置管理 ==========
+    
+    async def get_properties(self, server_name: str) -> dict:
+        """获取服务器属性"""
+        result = await self.api.async_get_server_properties(server_name)
+        return result.properties or result.data or {}
+
+    async def set_property(self, server_name: str, key: str, value: str) -> ActionResponse:
+        """设置服务器属性"""
+        return await self.api.async_update_server_properties(
+            server_name, PropertiesPayload(properties={key: value})
         )
-        return TaskResult(**result)
 
-    async def get_allowlist(self, server_name: str) -> List[str]:
-        await self.ensure_authenticated()
-        result = await self._request("GET", f"/api/server/{server_name}/allowlist/get")
-        return result.get("allowlist", [])
+    # ========== 白名单管理 ==========
+    
+    async def get_allowlist(self, server_name: str) -> List[dict]:
+        """获取白名单"""
+        result = await self.api.async_get_server_allowlist(server_name)
+        return result.players or result.data or []
 
     async def add_allowlist(
         self, server_name: str, player_name: str, ignores_limit: bool = False
-    ) -> TaskResult:
-        await self.ensure_authenticated()
-        result = await self._request(
-            "POST",
-            f"/api/server/{server_name}/allowlist/add",
-            json={"name": player_name, "ignoresPlayerLimit": ignores_limit},
+    ) -> ActionResponse:
+        """添加白名单"""
+        return await self.api.async_add_server_allowlist(
+            server_name,
+            AllowlistAddPayload(players=[player_name], ignoresPlayerLimit=ignores_limit),
         )
-        return TaskResult(**result)
 
-    async def remove_allowlist(self, server_name: str, player_name: str) -> TaskResult:
-        await self.ensure_authenticated()
-        result = await self._request(
-            "DELETE",
-            f"/api/server/{server_name}/allowlist/remove",
-            json={"name": player_name},
+    async def remove_allowlist(self, server_name: str, player_name: str) -> ActionResponse:
+        """移除白名单"""
+        return await self.api.async_remove_server_allowlist_players(
+            server_name, AllowlistRemovePayload(players=[player_name])
         )
-        return TaskResult(**result)
 
-    async def get_permissions(self, server_name: str) -> List[Dict[str, Any]]:
-        await self.ensure_authenticated()
-        result = await self._request(
-            "GET", f"/api/server/{server_name}/permissions/get"
-        )
-        return result.get("permissions", [])
+    # ========== 权限管理 ==========
+    
+    async def get_permissions(self, server_name: str) -> List[dict]:
+        """获取权限列表"""
+        result = await self.api.async_get_server_permissions_data(server_name)
+        return result.permissions or result.data or []
 
     async def set_permission(
         self, server_name: str, xuid: str, name: str, level: str = "member"
-    ) -> TaskResult:
-        await self.ensure_authenticated()
-        result = await self._request(
-            "PUT",
-            f"/api/server/{server_name}/permissions/set",
-            json={"xuid": xuid, "name": name, "permissionLevel": level},
+    ) -> ActionResponse:
+        """设置权限"""
+        return await self.api.async_set_server_permissions(
+            server_name,
+            PermissionsSetPayload(
+                permissions=[PlayerPermission(name=name, xuid=xuid, permission_level=level)]
+            ),
         )
-        return TaskResult(**result)
 
-    async def get_download_versions(self) -> List[Dict[str, Any]]:
-        await self.ensure_authenticated()
-        result = await self._request("GET", "/api/downloads/list")
-        return result.get("versions", [])
+    # ========== 玩家管理 ==========
+    
+    async def get_players(self) -> List[dict]:
+        """获取所有已知玩家"""
+        result = await self.api.async_get_players()
+        if isinstance(result, dict):
+            return result.get("players", [])
+        return result.players if hasattr(result, "players") else []
+
+    async def scan_players(self) -> Dict[str, Any]:
+        """扫描玩家日志"""
+        return await self.api.async_scan_players()
+
+    # ========== 备份管理 ==========
+    
+    async def list_backups(self, server_name: str, backup_type: str = "all") -> List[str]:
+        """列出备份"""
+        result = await self.api.async_list_server_backups(server_name, backup_type)
+        return result.files or result.data or []
+
+    async def create_backup(self, server_name: str, backup_type: str = "world") -> Dict[str, Any]:
+        """创建备份"""
+        result = await self.api.async_trigger_server_backup(
+            server_name, BackupActionPayload(backup_type=backup_type)
+        )
+        return result.model_dump()
+
+    async def export_world(self, server_name: str) -> ActionResponse:
+        """导出世界"""
+        return await self.api.async_export_server_world(server_name)
+
+    # ========== 内容管理 ==========
+    
+    async def list_worlds(self) -> List[str]:
+        """列出可用世界模板"""
+        result = await self.api.async_get_content_worlds()
+        return result.files or []
+
+    async def list_addons(self) -> List[str]:
+        """列出可用插件"""
+        result = await self.api.async_get_content_addons()
+        return result.files or []
+
+    async def install_world(self, server_name: str, filename: str) -> ActionResponse:
+        """安装世界"""
+        return await self.api.async_install_server_world(
+            server_name, FileNamePayload(filename=filename)
+        )
+
+    async def install_addon(self, server_name: str, filename: str) -> ActionResponse:
+        """安装插件"""
+        return await self.api.async_install_server_addon(
+            server_name, FileNamePayload(filename=filename)
+        )

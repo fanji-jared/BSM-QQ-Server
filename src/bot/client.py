@@ -78,12 +78,9 @@ def run_bot():
     intents = botpy.Intents(
         public_messages=True,
         public_guild_messages=True,
-        guild_messages=True,
-        direct_message=True,
-        groups=True,
     )
     
     client = BotClient(intents=intents)
     
     logger.info("Starting QQ Bot...")
-    client.run(appid=config.QQ_BOT_APPID, token=config.QQ_BOT_TOKEN)
+    client.run(appid=config.QQ_BOT_APPID, secret=config.QQ_BOT_TOKEN)

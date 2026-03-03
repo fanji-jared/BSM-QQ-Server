@@ -4,12 +4,12 @@
 
 ## ✨ 功能特性
 
-- 🔧 **服务器管理**: 启动、停止、重启服务器
-- 📊 **状态监控**: 查看服务器运行状态、在线玩家
-- 👥 **玩家管理**: 白名单管理、权限设置
-- ⚙️ **配置管理**: 查询和修改服务器配置
-- 💻 **命令执行**: 远程执行服务器控制台命令
-- 🔐 **权限控制**: 基于用户角色的权限管理
+- 🔧 **服务器管理**: 启动、停止、重启、更新服务器
+- 📊 **状态监控**: 查看服务器运行状态、版本、进程信息
+- 👥 **玩家管理**: 白名单管理、权限设置、玩家扫描
+- ⚙️ **配置管理**: 查询和修改服务器属性
+- 💾 **备份管理**: 创建备份、列出备份、导出世界
+- 🌍 **世界管理**: 列出和安装世界模板
 - 📱 **多场景支持**: 支持 QQ 群、QQ 频道、私信
 
 ## 📋 目录
@@ -56,15 +56,15 @@ cp .env.example .env
 ```env
 # QQ机器人配置
 QQ_BOT_APPID=你的机器人AppID
-QQ_BOT_TOKEN=你的机器人Token
+QQ_BOT_SECRET=你的机器人AppSecret
 
 # BSM API配置
-BSM_API_URL=http://your-bsm-server:port
+BSM_API_URL=http://your-bsm-server:11325/api
 BSM_USERNAME=你的BSM用户名
 BSM_PASSWORD=你的BSM密码
 
 # 机器人配置
-BOT_PREFIX=/mc
+BOT_PREFIX=/
 ADMIN_USERS=管理员QQ号1,管理员QQ号2
 
 # 日志级别
@@ -84,11 +84,11 @@ python -m src.main
 | 变量名 | 必填 | 说明 |
 |--------|------|------|
 | `QQ_BOT_APPID` | ✅ | QQ 机器人的 AppID，从 QQ 开放平台获取 |
-| `QQ_BOT_TOKEN` | ✅ | QQ 机器人的 Token，从 QQ 开放平台获取 |
-| `BSM_API_URL` | ✅ | BSM API 服务地址，默认为 `http://localhost:11325` |
+| `QQ_BOT_SECRET` | ✅ | QQ 机器人的 AppSecret，从 QQ 开放平台获取 |
+| `BSM_API_URL` | ✅ | BSM API 服务地址，默认为 `http://localhost:11325/api` |
 | `BSM_USERNAME` | ✅ | BSM 登录用户名 |
 | `BSM_PASSWORD` | ✅ | BSM 登录密码 |
-| `BOT_PREFIX` | ❌ | 机器人指令前缀，默认为 `/mc` |
+| `BOT_PREFIX` | ❌ | 机器人指令前缀，默认为 `/` |
 | `ADMIN_USERS` | ❌ | 管理员 QQ 号列表，用逗号分隔 |
 | `LOG_LEVEL` | ❌ | 日志级别，默认为 `INFO`，可选 `DEBUG`、`WARNING`、`ERROR` |
 
@@ -97,7 +97,7 @@ python -m src.main
 1. 访问 [QQ 开放平台](https://bot.q.qq.com/)
 2. 注册并登录开发者账号
 3. 创建机器人应用
-4. 在机器人管理页面获取 `AppID` 和 `Token`
+4. 在机器人管理页面获取 `AppID` 和 `AppSecret`
 
 ### 配置沙箱环境
 
@@ -109,67 +109,113 @@ python -m src.main
 
 ## 指令列表
 
-### 服务器管理
+### 📖 帮助信息
 
 | 指令 | 说明 | 权限 |
 |------|------|------|
-| `/mc help` | 查看帮助信息 | 所有人 |
-| `/mc status [服务器名]` | 查看服务器状态 | 所有人 |
-| `/mc list` | 列出所有服务器 | 所有人 |
-| `/mc start <服务器名>` | 启动服务器 | 管理员 |
-| `/mc stop <服务器名>` | 停止服务器 | 管理员 |
-| `/mc restart <服务器名>` | 重启服务器 | 管理员 |
+| `/help` | 查看帮助信息 | 所有人 |
 
-### 玩家管理
+### 📊 服务器信息
 
 | 指令 | 说明 | 权限 |
 |------|------|------|
-| `/mc whitelist list [服务器名]` | 查看白名单列表 | 所有人 |
-| `/mc whitelist add <玩家名> [服务器名]` | 添加玩家到白名单 | 管理员 |
-| `/mc whitelist remove <玩家名> [服务器名]` | 从白名单移除玩家 | 管理员 |
-| `/mc op <玩家名> [服务器名]` | 设置玩家为管理员 | 管理员 |
-| `/mc deop <玩家名> [服务器名]` | 取消玩家管理员权限 | 管理员 |
+| `/list` | 列出所有服务器 | 所有人 |
+| `/status <服务器名>` | 查看服务器状态（版本、玩家、进程信息） | 所有人 |
+| `/info` | 查看系统信息（操作系统、BSM版本） | 所有人 |
 
-### 配置管理
+### 🔧 服务器操作
 
 | 指令 | 说明 | 权限 |
 |------|------|------|
-| `/mc config get [属性名] [服务器名]` | 查看服务器配置 | 管理员 |
-| `/mc config set <属性名> <值> [服务器名]` | 设置服务器配置 | 管理员 |
-| `/mc cmd <命令> [服务器名]` | 执行服务器控制台命令 | 管理员 |
+| `/start <服务器名>` | 启动服务器 | 管理员 |
+| `/stop <服务器名>` | 停止服务器 | 管理员 |
+| `/restart <服务器名>` | 重启服务器 | 管理员 |
+| `/cmd <服务器名> <命令>` | 执行服务器控制台命令 | 管理员 |
+| `/update <服务器名>` | 更新服务器版本 | 管理员 |
 
-### 指令参数说明
+### ⚙️ 配置管理
 
-- `<参数>`: 必填参数
-- `[参数]`: 可选参数，有默认值
-- `server=服务器名`: 使用关键字参数指定服务器
+| 指令 | 说明 | 权限 |
+|------|------|------|
+| `/prop get <服务器名> [属性名]` | 查看服务器属性 | 管理员 |
+| `/prop set <服务器名> <属性名> <值>` | 设置服务器属性 | 管理员 |
+
+### 👥 白名单管理
+
+| 指令 | 说明 | 权限 |
+|------|------|------|
+| `/allowlist list <服务器名>` | 查看白名单列表 | 所有人 |
+| `/allowlist add <服务器名> <玩家名>` | 添加玩家到白名单 | 管理员 |
+| `/allowlist remove <服务器名> <玩家名>` | 从白名单移除玩家 | 管理员 |
+
+### 🔐 权限管理
+
+| 指令 | 说明 | 权限 |
+|------|------|------|
+| `/perm list <服务器名>` | 查看权限列表 | 管理员 |
+| `/perm set <服务器名> <XUID> <玩家名> <等级>` | 设置玩家权限等级 | 管理员 |
+
+权限等级: `visitor`、`member`、`operator`
+
+### 🎮 玩家管理
+
+| 指令 | 说明 | 权限 |
+|------|------|------|
+| `/players` | 列出所有已知玩家 | 所有人 |
+| `/players scan` | 扫描服务器日志获取玩家信息 | 管理员 |
+
+### 💾 备份管理
+
+| 指令 | 说明 | 权限 |
+|------|------|------|
+| `/backup list <服务器名> [类型]` | 列出备份文件 | 管理员 |
+| `/backup create <服务器名> [类型]` | 创建备份 | 管理员 |
+| `/backup export <服务器名>` | 导出世界 | 管理员 |
+
+备份类型: `world`（世界）、`server`（服务器）、`all`（全部）
+
+### 🌍 世界管理
+
+| 指令 | 说明 | 权限 |
+|------|------|------|
+| `/world list` | 列出可用世界模板 | 管理员 |
+| `/world install <服务器名> <文件名>` | 安装世界模板 | 管理员 |
 
 ### 使用示例
 
 ```
-# 查看默认服务器状态
-/mc status
+# 查看帮助
+/help
 
-# 启动指定服务器
-/mc start myserver
+# 列出所有服务器
+/list
 
-# 添加玩家到白名单
-/mc whitelist add Steve
+# 查看服务器状态
+/status myserver
 
-# 添加玩家到指定服务器的白名单
-/mc whitelist add Steve server=myserver
-
-# 查看服务器配置
-/mc config get
-
-# 查看特定配置项
-/mc config get max-players
-
-# 设置配置项
-/mc config set max-players 20
+# 启动服务器
+/start myserver
 
 # 执行服务器命令
-/mc cmd say Hello World!
+/cmd myserver say Hello World!
+
+# 查看服务器属性
+/prop get myserver
+
+# 查看特定属性
+/prop get myserver max-players
+
+# 设置属性
+/prop set myserver max-players 20
+
+# 添加白名单
+/allowlist add myserver Steve
+
+# 设置玩家为管理员
+/perm set myserver 1234567890123456 Steve operator
+
+# 创建世界备份
+/backup create myserver world
 ```
 
 ## 项目结构
@@ -188,16 +234,10 @@ BSM-QQ-Server/
 │   │       └── command.py      # 指令处理器
 │   ├── bsm/                    # BSM API 模块
 │   │   ├── __init__.py
-│   │   ├── client.py           # API 客户端
-│   │   ├── models.py           # 数据模型
-│   │   └── exceptions.py       # 异常定义
+│   │   └── client.py           # API 客户端包装器
 │   └── utils/                  # 工具模块
 │       ├── __init__.py
 │       └── helpers.py          # 工具函数
-├── tests/                      # 测试目录
-│   ├── __init__.py
-│   ├── test_bsm.py             # BSM 模块测试
-│   └── test_utils.py           # 工具函数测试
 ├── requirements.txt            # 依赖列表
 ├── .env.example                # 环境变量示例
 └── README.md                   # 项目说明
@@ -213,9 +253,6 @@ pip install pytest
 
 # 运行所有测试
 python -m pytest tests/ -v
-
-# 运行特定测试文件
-python -m pytest tests/test_utils.py -v
 ```
 
 ### 代码风格
@@ -238,7 +275,7 @@ flake8 src/
 1. 在 `src/bot/handlers/command.py` 中添加新的处理方法：
 
 ```python
-async def _cmd_newcmd(self, message, args, kwargs):
+async def _cmd_newcmd(self, message, args):
     """新指令处理函数"""
     # 实现指令逻辑
     await self._reply(message, "指令执行成功")
@@ -255,19 +292,15 @@ self.commands: Dict[str, Callable] = {
 
 ### 扩展 BSM API
 
-如需添加新的 BSM API 接口：
+本项目使用官方 `bsm-api-client` 库，如需添加新的 API 接口：
 
-1. 在 `src/bsm/client.py` 中添加新的方法：
+1. 在 `src/bsm/client.py` 中添加新的包装方法：
 
 ```python
 async def new_api_method(self, server_name: str) -> SomeResult:
     """新的 API 方法"""
-    await self.ensure_authenticated()
-    result = await self._request("GET", f"/api/server/{server_name}/new-endpoint")
-    return SomeResult(**result)
+    return await self.api.async_new_method(server_name)
 ```
-
-2. 在 `src/bsm/models.py` 中添加对应的数据模型（如需要）
 
 ## 常见问题
 
@@ -275,7 +308,7 @@ async def new_api_method(self, server_name: str) -> SomeResult:
 
 **A:** 请检查以下几点：
 1. BSM 服务是否正在运行
-2. `BSM_API_URL` 配置是否正确
+2. `BSM_API_URL` 配置是否正确（需要包含 `/api` 路径）
 3. 网络是否可以访问 BSM API 地址
 4. BSM 用户名和密码是否正确
 
@@ -311,7 +344,7 @@ BOT_PREFIX=/minecraft
 
 - **Python 3.10+** - 开发语言
 - **qq-botpy** - 腾讯官方 QQ 机器人 SDK
-- **httpx** - 异步 HTTP 客户端
+- **bsm-api-client** - BSM 官方 Python API 客户端
 - **pydantic** - 数据验证
 - **python-dotenv** - 环境变量管理
 
@@ -320,6 +353,7 @@ BOT_PREFIX=/minecraft
 - [QQ 机器人文档](https://bot.q.qq.com/wiki/)
 - [qq-botpy GitHub](https://github.com/tencent-connect/botpy)
 - [Bedrock Server Manager](https://github.com/Bedrock-OSS/bedrock-server-manager)
+- [bsm-api-client](https://github.com/DMedina559/bsm-api-client)
 
 ## 许可证
 

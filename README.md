@@ -33,7 +33,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-username/BSM-QQ-Server.git
+git clone https://github.com/fanji-jared/BSM-QQ-Server.git
 cd BSM-QQ-Server
 ```
 
@@ -198,7 +198,6 @@ BSM-QQ-Server/
 │   ├── __init__.py
 │   ├── test_bsm.py             # BSM 模块测试
 │   └── test_utils.py           # 工具函数测试
-│
 ├── requirements.txt            # 依赖列表
 ├── .env.example                # 环境变量示例
 └── README.md                   # 项目说明

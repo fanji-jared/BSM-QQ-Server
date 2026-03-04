@@ -84,11 +84,44 @@ python -m src.main
 
 ## Docker Deployment
 
-### Using Docker Compose (Recommended)
+### Option 1: Pull from Docker Hub (Recommended)
 
-1. Ensure Docker and Docker Compose are installed
+1. Create `.env` configuration file:
+```bash
+# Create .env file
+cat > .env << EOF
+QQ_BOT_APPID=your-bot-appid
+QQ_BOT_SECRET=your-bot-secret
+BSM_API_URL=http://your-bsm-server:11325/api
+BSM_USERNAME=your-bsm-username
+BSM_PASSWORD=your-bsm-password
+BOT_PREFIX=/
+ADMIN_USERS=
+LOG_LEVEL=INFO
+EOF
+```
 
-2. Clone the project and configure environment variables:
+2. Download docker-compose config and start:
+```bash
+# Download config file
+curl -O https://raw.githubusercontent.com/fanji-jared/BSM-QQ-Server/main/docker-compose.hub.yml
+
+# Start service
+docker-compose -f docker-compose.hub.yml up -d
+```
+
+3. Or use docker run directly:
+```bash
+docker run -d \
+  --name bsm-qq-server \
+  --env-file .env \
+  -v $(pwd)/logs:/app/logs \
+  fanjis/bsm-qq-server:latest
+```
+
+### Option 2: Build from Source
+
+1. Clone the project:
 ```bash
 git clone https://github.com/fanji-jared/BSM-QQ-Server.git
 cd BSM-QQ-Server
@@ -96,30 +129,17 @@ cp .env.example .env
 # Edit .env file with your configuration
 ```
 
-3. Start the service:
+2. Build and start with Docker Compose:
 ```bash
 docker-compose up -d
 ```
 
-4. View logs:
+3. Or use Docker commands:
 ```bash
-docker-compose logs -f
-```
-
-5. Stop the service:
-```bash
-docker-compose down
-```
-
-### Using Docker Commands
-
-1. Build the image:
-```bash
+# Build image
 docker build -t bsm-qq-server .
-```
 
-2. Run the container:
-```bash
+# Run container
 docker run -d \
   --name bsm-qq-server \
   --env-file .env \
@@ -127,7 +147,20 @@ docker run -d \
   bsm-qq-server
 ```
 
-### Docker Environment Variables
+### Common Commands
+
+```bash
+# View logs
+docker-compose logs -f
+
+# Stop service
+docker-compose down
+
+# Restart service
+docker-compose restart
+```
+
+### Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|

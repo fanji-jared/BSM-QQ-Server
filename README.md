@@ -84,11 +84,44 @@ python -m src.main
 
 ## Docker 部署
 
-### 使用 Docker Compose（推荐）
+### 方式一：从 Docker Hub 拉取（推荐）
 
-1. 确保已安装 Docker 和 Docker Compose
+1. 创建配置文件 `.env`：
+```bash
+# 创建 .env 文件
+cat > .env << EOF
+QQ_BOT_APPID=你的机器人AppID
+QQ_BOT_SECRET=你的机器人AppSecret
+BSM_API_URL=http://your-bsm-server:11325/api
+BSM_USERNAME=你的BSM用户名
+BSM_PASSWORD=你的BSM密码
+BOT_PREFIX=/
+ADMIN_USERS=
+LOG_LEVEL=INFO
+EOF
+```
 
-2. 克隆项目并配置环境变量：
+2. 下载 docker-compose 配置并启动：
+```bash
+# 下载配置文件
+curl -O https://raw.githubusercontent.com/fanji-jared/BSM-QQ-Server/main/docker-compose.hub.yml
+
+# 启动服务
+docker-compose -f docker-compose.hub.yml up -d
+```
+
+3. 或者直接使用 docker run：
+```bash
+docker run -d \
+  --name bsm-qq-server \
+  --env-file .env \
+  -v $(pwd)/logs:/app/logs \
+  fanjis/bsm-qq-server:latest
+```
+
+### 方式二：从源码构建
+
+1. 克隆项目：
 ```bash
 git clone https://github.com/fanji-jared/BSM-QQ-Server.git
 cd BSM-QQ-Server
@@ -96,30 +129,17 @@ cp .env.example .env
 # 编辑 .env 文件填写配置
 ```
 
-3. 启动服务：
+2. 使用 Docker Compose 构建并启动：
 ```bash
 docker-compose up -d
 ```
 
-4. 查看日志：
+3. 或使用 Docker 命令：
 ```bash
-docker-compose logs -f
-```
-
-5. 停止服务：
-```bash
-docker-compose down
-```
-
-### 使用 Docker 命令
-
-1. 构建镜像：
-```bash
+# 构建镜像
 docker build -t bsm-qq-server .
-```
 
-2. 运行容器：
-```bash
+# 运行容器
 docker run -d \
   --name bsm-qq-server \
   --env-file .env \
@@ -127,7 +147,20 @@ docker run -d \
   bsm-qq-server
 ```
 
-### Docker 环境变量
+### 常用命令
+
+```bash
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重启服务
+docker-compose restart
+```
+
+### 环境变量说明
 
 | 变量名 | 必填 | 说明 |
 |--------|------|------|

@@ -72,8 +72,8 @@ class BotClient(botpy.Client):
 
 
 def run_bot():
-    if not config.QQ_BOT_APPID or not config.QQ_BOT_TOKEN:
-        raise ValueError("QQ_BOT_APPID and QQ_BOT_TOKEN must be configured")
+    if not config.QQ_BOT_APPID or not config.QQ_BOT_SECRET:
+        raise ValueError("QQ_BOT_APPID and QQ_BOT_SECRET must be configured")
     
     intents = botpy.Intents(
         public_messages=True,
@@ -83,4 +83,4 @@ def run_bot():
     client = BotClient(intents=intents)
     
     logger.info("Starting QQ Bot...")
-    client.run(appid=config.QQ_BOT_APPID, secret=config.QQ_BOT_TOKEN)
+    client.run(appid=config.QQ_BOT_APPID, secret=config.QQ_BOT_SECRET)

@@ -20,6 +20,7 @@
 
 - [环境要求](#环境要求)
 - [快速开始](#快速开始)
+- [Docker 部署](#docker-部署)
 - [配置说明](#配置说明)
 - [指令列表](#指令列表)
 - [项目结构](#项目结构)
@@ -80,6 +81,64 @@ LOG_LEVEL=INFO
 ```bash
 python -m src.main
 ```
+
+## Docker 部署
+
+### 使用 Docker Compose（推荐）
+
+1. 确保已安装 Docker 和 Docker Compose
+
+2. 克隆项目并配置环境变量：
+```bash
+git clone https://github.com/fanji-jared/BSM-QQ-Server.git
+cd BSM-QQ-Server
+cp .env.example .env
+# 编辑 .env 文件填写配置
+```
+
+3. 启动服务：
+```bash
+docker-compose up -d
+```
+
+4. 查看日志：
+```bash
+docker-compose logs -f
+```
+
+5. 停止服务：
+```bash
+docker-compose down
+```
+
+### 使用 Docker 命令
+
+1. 构建镜像：
+```bash
+docker build -t bsm-qq-server .
+```
+
+2. 运行容器：
+```bash
+docker run -d \
+  --name bsm-qq-server \
+  --env-file .env \
+  -v $(pwd)/logs:/app/logs \
+  bsm-qq-server
+```
+
+### Docker 环境变量
+
+| 变量名 | 必填 | 说明 |
+|--------|------|------|
+| `QQ_BOT_APPID` | ✅ | QQ 机器人 AppID |
+| `QQ_BOT_SECRET` | ✅ | QQ 机器人 AppSecret |
+| `BSM_API_URL` | ✅ | BSM API 地址 |
+| `BSM_USERNAME` | ✅ | BSM 用户名 |
+| `BSM_PASSWORD` | ✅ | BSM 密码 |
+| `BOT_PREFIX` | ❌ | 指令前缀，默认 `/` |
+| `ADMIN_USERS` | ❌ | 管理员 QQ 号 |
+| `LOG_LEVEL` | ❌ | 日志级别，默认 `INFO` |
 
 ## 配置说明
 

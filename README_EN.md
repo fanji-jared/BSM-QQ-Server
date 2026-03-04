@@ -20,6 +20,7 @@
 
 - [Requirements](#requirements)
 - [Quick Start](#quick-start)
+- [Docker Deployment](#docker-deployment)
 - [Configuration](#configuration)
 - [Commands](#commands)
 - [Project Structure](#project-structure)
@@ -80,6 +81,64 @@ LOG_LEVEL=INFO
 ```bash
 python -m src.main
 ```
+
+## Docker Deployment
+
+### Using Docker Compose (Recommended)
+
+1. Ensure Docker and Docker Compose are installed
+
+2. Clone the project and configure environment variables:
+```bash
+git clone https://github.com/fanji-jared/BSM-QQ-Server.git
+cd BSM-QQ-Server
+cp .env.example .env
+# Edit .env file with your configuration
+```
+
+3. Start the service:
+```bash
+docker-compose up -d
+```
+
+4. View logs:
+```bash
+docker-compose logs -f
+```
+
+5. Stop the service:
+```bash
+docker-compose down
+```
+
+### Using Docker Commands
+
+1. Build the image:
+```bash
+docker build -t bsm-qq-server .
+```
+
+2. Run the container:
+```bash
+docker run -d \
+  --name bsm-qq-server \
+  --env-file .env \
+  -v $(pwd)/logs:/app/logs \
+  bsm-qq-server
+```
+
+### Docker Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `QQ_BOT_APPID` | ✅ | QQ bot AppID |
+| `QQ_BOT_SECRET` | ✅ | QQ bot AppSecret |
+| `BSM_API_URL` | ✅ | BSM API URL |
+| `BSM_USERNAME` | ✅ | BSM username |
+| `BSM_PASSWORD` | ✅ | BSM password |
+| `BOT_PREFIX` | ❌ | Command prefix, default: `/` |
+| `ADMIN_USERS` | ❌ | Admin QQ IDs |
+| `LOG_LEVEL` | ❌ | Log level, default: `INFO` |
 
 ## Configuration
 

@@ -1,0 +1,33 @@
+services:
+  bsm-qq-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bsm-qq-server:latest
+    container_name: bsm-qq-server
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+      - QQ_BOT_APPID=${QQ_BOT_APPID}
+      - QQ_BOT_SECRET=${QQ_BOT_SECRET}
+      - BSM_API_URL=${BSM_API_URL}
+      - BSM_USERNAME=${BSM_USERNAME}
+      - BSM_PASSWORD=${BSM_PASSWORD}
+      - BOT_PREFIX=${BOT_PREFIX:-/}
+      - ADMIN_USERS=${ADMIN_USERS:-}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - bsm-network
+
+networks:
+  bsm-network:
+    driver: bridge

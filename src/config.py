@@ -9,10 +9,12 @@ load_dotenv()
 
 class Config:
     QQ_BOT_APPID: str = os.getenv("QQ_BOT_APPID", "")
-    QQ_BOT_TOKEN: str = os.getenv("QQ_BOT_TOKEN", "")
+    QQ_BOT_SECRET: str = os.getenv("QQ_BOT_SECRET", "")
     
     BSM_API_URL: str = os.getenv("BSM_API_URL", "http://localhost:11325")
+    
     BSM_USERNAME: str = os.getenv("BSM_USERNAME", "")
+    
     BSM_PASSWORD: str = os.getenv("BSM_PASSWORD", "")
     
     BOT_PREFIX: str = os.getenv("BOT_PREFIX", "/mc")
@@ -20,6 +22,7 @@ class Config:
     ADMIN_USERS: Set[str] = set(
         uid.strip() for uid in os.getenv("ADMIN_USERS", "").split(",") if uid.strip()
     )
+
     
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     
@@ -27,7 +30,7 @@ class Config:
     def validate(cls) -> bool:
         required = [
             ("QQ_BOT_APPID", cls.QQ_BOT_APPID),
-            ("QQ_BOT_TOKEN", cls.QQ_BOT_TOKEN),
+            ("QQ_BOT_SECRET", cls.QQ_BOT_SECRET),
             ("BSM_API_URL", cls.BSM_API_URL),
             ("BSM_USERNAME", cls.BSM_USERNAME),
             ("BSM_PASSWORD", cls.BSM_PASSWORD),

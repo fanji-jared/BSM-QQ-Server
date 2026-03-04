@@ -89,6 +89,8 @@ class CommandHandler:
 
     async def _reply(self, message, content: str):
         """回复消息"""
+        if not content.startswith("\n"):
+            content = "\n" + content
         if isinstance(message, Message):
             await message.reply(content=content)
         elif isinstance(message, GroupMessage):
